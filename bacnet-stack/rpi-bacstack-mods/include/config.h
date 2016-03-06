@@ -27,7 +27,6 @@
 
 /* Note: these defines can be defined in your makefile or project
    or here or not defined and defaults will be used */
-/* Set max bin outputs */
 #define MAX_BINARY_OUTPUTS 3
 
 
@@ -116,7 +115,6 @@
 /* BACAPP decodes WriteProperty service requests
    Choose the datatypes that your application supports */
 #if !(defined(BACAPP_ALL) || \
-    defined(BACAPP_MINIMAL) || \
     defined(BACAPP_NULL) || \
     defined(BACAPP_BOOLEAN) || \
     defined(BACAPP_UNSIGNED) || \
@@ -129,7 +127,6 @@
     defined(BACAPP_ENUMERATED) || \
     defined(BACAPP_DATE) || \
     defined(BACAPP_TIME) || \
-    defined(BACAPP_LIGHTING_COMMAND) || \
     defined(BACAPP_OBJECT_ID))
 #define BACAPP_ALL
 #endif
@@ -144,18 +141,6 @@
 #define BACAPP_OCTET_STRING
 #define BACAPP_CHARACTER_STRING
 #define BACAPP_BIT_STRING
-#define BACAPP_ENUMERATED
-#define BACAPP_DATE
-#define BACAPP_TIME
-#define BACAPP_OBJECT_ID
-#define BACAPP_LIGHTING_COMMAND
-#elif defined (BACAPP_MINIMAL)
-#define BACAPP_NULL
-#define BACAPP_BOOLEAN
-#define BACAPP_UNSIGNED
-#define BACAPP_SIGNED
-#define BACAPP_REAL
-#define BACAPP_CHARACTER_STRING
 #define BACAPP_ENUMERATED
 #define BACAPP_DATE
 #define BACAPP_TIME

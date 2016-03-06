@@ -51,7 +51,7 @@ static BACNET_BINARY_PV
     Binary_Output_Level[MAX_BINARY_OUTPUTS][BACNET_MAX_PRIORITY];
 /* Writable out-of-service allows others to play with our Present Value */
 /* without changing the physical output */
-static bool Out_Of_Service[MAX_BINARY_OUTPUTS];
+static bool Binary_Output_Out_Of_Service_Array[MAX_BINARY_OUTPUTS];
 
 /* These three arrays are used by the ReadPropertyMultiple handler */
 static const int Binary_Output_Properties_Required[] = {
@@ -177,20 +177,6 @@ BACNET_BINARY_PV Binary_Output_Present_Value(
     return value;
 }
 
-bool Binary_Output_Out_Of_Service(
-    uint32_t object_instance)
-{
-    bool value = false;
-    unsigned index = 0;
-
-    index = Binary_Output_Instance_To_Index(object_instance);
-    if (index < MAX_BINARY_OUTPUTS) {
-        value = Out_Of_Service[index];
-    }
-
-    return value;
-}
-
 /* note: the object name must be unique within this device */
 bool Binary_Output_Object_Name(
     uint32_t object_instance,
@@ -268,7 +254,7 @@ int Binary_Output_Read_Property(
         case PROP_OUT_OF_SERVICE:
             object_index =
                 Binary_Output_Instance_To_Index(rpdata->object_instance);
-            state = Out_Of_Service[object_index];
+            state = Binary_Output_Out_Of_Service_Array[object_index];
             apdu_len = encode_application_boolean(&apdu[0], state);
             break;
         case PROP_POLARITY:
@@ -379,13 +365,6 @@ bool Binary_Output_Write_Property(
         wp_data->error_code = ERROR_CODE_VALUE_OUT_OF_RANGE;
         return false;
     }
-    if ((wp_data->object_property != PROP_PRIORITY_ARRAY) &&
-        (wp_data->array_index != BACNET_ARRAY_ALL)) {
-        /*  only array properties can have array options */
-        wp_data->error_class = ERROR_CLASS_PROPERTY;
-        wp_data->error_code = ERROR_CODE_PROPERTY_IS_NOT_AN_ARRAY;
-        return false;
-    }
     switch (wp_data->object_property) {
         case PROP_PRESENT_VALUE:
             if (value.tag == BACNET_APPLICATION_TAG_ENUMERATED) {
@@ -398,8 +377,8 @@ bool Binary_Output_Write_Property(
                     (value.type.Enumerated <= MAX_BINARY_PV)) {
                     level = (BACNET_BINARY_PV) value.type.Enumerated;
                     object_index =
-                        Binary_Output_Instance_To_Index
-                        (wp_data->object_instance);
+                        Binary_Output_Instance_To_Index(wp_data->
+                        object_instance);
                     priority--;
                     Binary_Output_Level[object_index][priority] = level;
                     /* Note: you could set the physical output here if we
@@ -425,8 +404,8 @@ bool Binary_Output_Write_Property(
                 if (status) {
                     level = BINARY_NULL;
                     object_index =
-                        Binary_Output_Instance_To_Index
-                        (wp_data->object_instance);
+                        Binary_Output_Instance_To_Index(wp_data->
+                        object_instance);
                     priority = wp_data->priority;
                     if (priority && (priority <= BACNET_MAX_PRIORITY)) {
                         priority--;
@@ -437,6 +416,7 @@ bool Binary_Output_Write_Property(
                            However, if Out of Service is TRUE, then don't set the
                            physical output.  This comment may apply to the
                            main loop (i.e. check out of service before changing output) */
+ 
                     } else {
                         status = false;
                         wp_data->error_class = ERROR_CLASS_PROPERTY;
@@ -444,10 +424,10 @@ bool Binary_Output_Write_Property(
                     }
                 }
             }
-	    //RasPi - OK I will
-	    level=Binary_Output_Present_Value(object_index);
-	    if(level==0) GPIO_SET = 1<<bo2gpio[object_index];
-	    else GPIO_CLR = 1<<bo2gpio[object_index];
+            //RasPi - OK I will
+            level=Binary_Output_Present_Value(object_index);
+             if(level==0) GPIO_SET = 1<<bo2gpio[object_index];
+             else GPIO_CLR = 1<<bo2gpio[object_index];
 
             break;
         case PROP_OUT_OF_SERVICE:
@@ -457,27 +437,13 @@ bool Binary_Output_Write_Property(
             if (status) {
                 object_index =
                     Binary_Output_Instance_To_Index(wp_data->object_instance);
-                Out_Of_Service[object_index] =
+                Binary_Output_Out_Of_Service_Array[object_index] =
                     value.type.Boolean;
             }
             break;
-        case PROP_OBJECT_IDENTIFIER:
-        case PROP_OBJECT_NAME:
-        case PROP_OBJECT_TYPE:
-        case PROP_STATUS_FLAGS:
-        case PROP_RELIABILITY:
-        case PROP_EVENT_STATE:
-        case PROP_POLARITY:
-        case PROP_PRIORITY_ARRAY:
-        case PROP_RELINQUISH_DEFAULT:
-        case PROP_ACTIVE_TEXT:
-        case PROP_INACTIVE_TEXT:
-            wp_data->error_class = ERROR_CLASS_PROPERTY;
-            wp_data->error_code = ERROR_CODE_WRITE_ACCESS_DENIED;
-            break;
         default:
             wp_data->error_class = ERROR_CLASS_PROPERTY;
-            wp_data->error_code = ERROR_CODE_UNKNOWN_PROPERTY;
+            wp_data->error_code = ERROR_CODE_WRITE_ACCESS_DENIED;
             break;
     }
 
