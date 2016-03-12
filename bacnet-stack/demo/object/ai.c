@@ -95,12 +95,26 @@ void Analog_Input_Property_Lists(
 void Analog_Input_Init(
     void)
 {
+
+FILE *slave;
+char *slave_number[20];
+int num;
+
+slave = fopen("/sys/bus/w1/devices/w1_bus_master1/w1_master_slave_count", "r");
+num = 0;
+while (fgets(buffer,sizeof buffer, slave) != NULL ){
+    slave_number[num] = buffer;
+    std::cout << slave_number[num] ;
+    num++;
+}
+
+
     unsigned i;
 #if defined(INTRINSIC_REPORTING)
     unsigned j;
 #endif
 
-    for (i = 0; i < MAX_ANALOG_INPUTS; i++) {
+    for (i = 0; i < num; i++) {
         AI_Descr[i].Present_Value = 0.0f;
         AI_Descr[i].Out_Of_Service = false;
         AI_Descr[i].Units = UNITS_PERCENT;
