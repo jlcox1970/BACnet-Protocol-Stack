@@ -49,6 +49,16 @@
 
 ANALOG_INPUT_DESCR AI_Descr[MAX_ANALOG_INPUTS];
 
+/* setup some vars for w1 reading */
+FILE *file;
+FILE *slaves;
+FILE *slave;
+
+char buffer[15];
+char *text[12];
+char *slave_name[20];
+char *slave_number[20];
+
 /* These arrays are used by the ReadPropertyMultiple handler */
 static const int Properties_Optional[] = {
     PROP_DESCRIPTION,
@@ -95,26 +105,12 @@ void Analog_Input_Property_Lists(
 void Analog_Input_Init(
     void)
 {
-
-FILE *slave;
-char *slave_number[20];
-int num;
-
-slave = fopen("/sys/bus/w1/devices/w1_bus_master1/w1_master_slave_count", "r");
-num = 0;
-while (fgets(buffer,sizeof buffer, slave) != NULL ){
-    slave_number[num] = buffer;
-    std::cout << slave_number[num] ;
-    num++;
-}
-
-
     unsigned i;
 #if defined(INTRINSIC_REPORTING)
     unsigned j;
 #endif
 
-    for (i = 0; i < num; i++) {
+    for (i = 0; i < MAX_ANALOG_INPUTS; i++) {
         AI_Descr[i].Present_Value = 0.0f;
         AI_Descr[i].Out_Of_Service = false;
         AI_Descr[i].Units = UNITS_PERCENT;
@@ -244,13 +240,29 @@ bool Analog_Input_Object_Name(
     uint32_t object_instance,
     BACNET_CHARACTER_STRING * object_name)
 {
+/* lookup w1 devices */
+	unsigned num = 0;
+	slaves = fopen("/sys/bus/w1/devices/w1_bus_master1/w1_master_slaves", "r");
+	if(!slaves) {
+	    printf("Failed opening: w1_master_slaves");
+	}
+	unsigned num = 0;
+	if (slaves) {
+		while (fgets(buffer,sizeof buffer, slaves) != NULL ){
+		    slave_name[num] = buffer;
+		    num++;
+		}
+	}	
+
+
+/* end lookup */
     static char text_string[32] = "";   /* okay for single thread */
     unsigned int index;
     bool status = false;
 
     index = Analog_Input_Instance_To_Index(object_instance);
     if (index < MAX_ANALOG_INPUTS) {
-        sprintf(text_string, "ANALOG INPUT %lu", (unsigned long) index);
+        sprintf(text_string, "%s %lu",slave_name[index], (unsigned long) index);
         status = characterstring_init_ansi(object_name, text_string);
     }
 
