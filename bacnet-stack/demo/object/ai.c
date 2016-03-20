@@ -43,21 +43,12 @@
 
 
 #ifndef MAX_ANALOG_INPUTS
-#define MAX_ANALOG_INPUTS 4
+#define MAX_ANALOG_INPUTS 5
 #endif
 
 
 ANALOG_INPUT_DESCR AI_Descr[MAX_ANALOG_INPUTS];
 
-/* setup some vars for w1 reading */
-FILE *file;
-FILE *slaves;
-FILE *slave;
-
-char buffer[15];
-char *text[12];
-char *slave_name[20];
-char *slave_number[20];
 
 /* These arrays are used by the ReadPropertyMultiple handler */
 static const int Properties_Optional[] = {
@@ -240,20 +231,6 @@ bool Analog_Input_Object_Name(
     uint32_t object_instance,
     BACNET_CHARACTER_STRING * object_name)
 {
-/* lookup w1 devices */
-	unsigned num = 0;
-	slaves = fopen("/sys/bus/w1/devices/w1_bus_master1/w1_master_slaves", "r");
-	if(!slaves) {
-	    printf("Failed opening: w1_master_slaves");
-	}
-	unsigned num = 0;
-	if (slaves) {
-		while (fgets(buffer,sizeof buffer, slaves) != NULL ){
-		    slave_name[num] = buffer;
-		    num++;
-		}
-	}	
-
 
 /* end lookup */
     static char text_string[32] = "";   /* okay for single thread */
@@ -262,7 +239,7 @@ bool Analog_Input_Object_Name(
 
     index = Analog_Input_Instance_To_Index(object_instance);
     if (index < MAX_ANALOG_INPUTS) {
-        sprintf(text_string, "%s %lu",slave_name[index], (unsigned long) index);
+        sprintf(text_string, "ANALOG INPUT %lu", (unsigned long) index);
         status = characterstring_init_ansi(object_name, text_string);
     }
 

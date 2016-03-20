@@ -43,10 +43,63 @@
 
 
 #ifndef MAX_ANALOG_VALUES
-#define MAX_ANALOG_VALUES 4
+#define MAX_ANALOG_VALUES 5
 #endif
 
+/* Includes for w1 */
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+
+
+
 ANALOG_VALUE_DESCR AV_Descr[MAX_ANALOG_VALUES];
+
+/* find the w1 sensor names */
+
+unsigned int sensor_num = 6;
+extern unsigned int sensor_id;
+extern unsigned int num;
+extern char *name[20];
+FILE *slaves;
+
+void sensor_name(unsigned int sensor_id, char **name_str) {
+        //printf("looking up sensor %i\n",sensor_id);
+        unsigned int num;
+        char buffer[15];
+        char *slave_name[15];
+        char *name[15];
+        *name_str = (char *) malloc(sizeof(char) *17);
+        unsigned int sensor_num;
+        sensor_num = 0;
+        num = 0;
+        //fclose(slaves);
+        slaves = fopen("/sys/bus/w1/devices/w1_bus_master1/w1_master_slaves", "r");
+
+        if (!slaves) {
+                printf("Failed opening: w1_master_slaves\n");
+                *name_str = "ANALOG VALUE ";
+                return;
+        }
+        while (fgets(buffer, sizeof buffer+2, slaves) != NULL) {
+                slave_name[num] = buffer;
+
+                if (num == sensor_id) {
+                        printf("sensor %i : %s\n", num,slave_name[num]);
+                        name[0] = slave_name[num];
+                        fclose(slaves);
+                        strcpy(*name_str, name[0]);
+                        return;
+                }
+                sensor_num++;
+                num++;
+        }
+        fclose(slaves);
+        *name_str = "ANALOG VALUE ";
+        return;
+}
+/* Finish */
+
 
 /* These three arrays are used by the ReadPropertyMultiple handler */
 static const int Analog_Value_Properties_Required[] = {
@@ -221,12 +274,14 @@ bool Analog_Value_Object_Name(
     uint32_t object_instance,
     BACNET_CHARACTER_STRING * object_name)
 {
+    char *named_sensor;
+
     static char text_string[32] = "";   /* okay for single thread */
     bool status = false;
 
     if (object_instance < MAX_ANALOG_VALUES) {
-        sprintf(text_string, "ANALOG VALUE %lu",
-            (unsigned long) object_instance);
+    	sensor_name( (unsigned long) object_instance, &named_sensor);
+	sprintf(text_string, "%s %lu", named_sensor,(unsigned long) object_instance);
         status = characterstring_init_ansi(object_name, text_string);
     }
 
