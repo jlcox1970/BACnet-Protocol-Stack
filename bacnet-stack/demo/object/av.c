@@ -74,7 +74,8 @@ void sensor_name(unsigned int sensor_id, char **name_str) {
         sensor_num = 0;
         num = 0;
         //fclose(slaves);
-        slaves = fopen("/sys/bus/w1/devices/w1_bus_master1/w1_master_slaves", "r");
+        //slaves = fopen("/sys/bus/w1/devices/w1_bus_master1/w1_master_slaves", "r");
+        slaves = fopen("/etc/w1/names.cfg", "r");
 
         if (!slaves) {
                 printf("Failed opening: w1_master_slaves\n");
@@ -85,7 +86,7 @@ void sensor_name(unsigned int sensor_id, char **name_str) {
                 slave_name[num] = buffer;
 
                 if (num == sensor_id) {
-                        printf("sensor %i : %s\n", num,slave_name[num]);
+//                        printf("sensor %i : %s\n", num,slave_name[num]);
                         name[0] = slave_name[num];
                         fclose(slaves);
                         strcpy(*name_str, name[0]);
